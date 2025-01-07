@@ -1,13 +1,20 @@
 document.addEventListener('DOMContentLoaded', () => {
     const mockCredentials = [
         {
-            code: "ABC123",
-            issuer: "Universidad Ejemplo",
-            validFrom: "2025-01-01T00:00:00Z",
-            validUntil: "2026-01-01T00:00:00Z",
-            subject: {
-                name: "Juan Pérez",
-                degree: "Licenciatura en Ciencias y Artes"
+            "@context": [
+                "https://www.w3.org/ns/credentials/v2",
+                "https://www.w3.org/ns/credentials/examples/v2"
+            ],
+            "id": "http://universidad.ejemplo/credenciales/58473",
+            "tipo": ["CredencialVerificable", "CredencialExampleAlumni"],
+            "emisor": "did:ejemplo:2g55q912ec3476eba2l9812ecbfe",
+            "validFrom": "2025-01-01T00:00:00Z",
+            "asuntoCredencial": {
+                "id": "did:ejemplo:ebfeb1f712ebc6f1c276e12ec21",
+                "exalumnoDe": {
+                    "id": "did:ejemplo:c276e12ec21ebfeb1f712ebc6f1",
+                    "nombre": "Universidad Ejemplo"
+                }
             }
         }
     ];
@@ -17,18 +24,28 @@ document.addEventListener('DOMContentLoaded', () => {
     if (createForm) {
         createForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const name = document.getElementById('name').value;
-            const degree = document.getElementById('degree').value;
             const issuer = document.getElementById('issuer').value;
             const validFrom = document.getElementById('validFrom').value;
-            const validUntil = document.getElementById('validUntil').value;
+            const validUntil = document.getElementById('validUntil').value || null;
+            const universityName = document.getElementById('universityName').value;
 
             const newCredential = {
-                code: `CODE${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-                issuer,
-                validFrom,
-                validUntil,
-                subject: { name, degree }
+                "@context": [
+                    "https://www.w3.org/ns/credentials/v2",
+                    "https://www.w3.org/ns/credentials/examples/v2"
+                ],
+                "id": `http://universidad.ejemplo/credenciales/${Math.random().toString(36).substring(2, 8)}`,
+                "tipo": ["CredencialVerificable", "CredencialExampleAlumni"],
+                "emisor": issuer,
+                "validFrom": validFrom,
+                "validUntil": validUntil,
+                "asuntoCredencial": {
+                    "id": `did:ejemplo:${Math.random().toString(36).substring(2, 12)}`,
+                    "exalumnoDe": {
+                        "id": `did:ejemplo:${Math.random().toString(36).substring(2, 12)}`,
+                        "nombre": universityName
+                    }
+                }
             };
 
             mockCredentials.push(newCredential);
@@ -42,21 +59,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (verifyForm) {
         verifyForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const code = document.getElementById('credentialCode').value.trim();
-            const credential = mockCredentials.find(cred => cred.code === code);
+            const credentialId = document.getElementById('credentialId').value.trim();
+            const credential = mockCredentials.find(cred => cred.id === credentialId);
 
             if (credential) {
                 const now = new Date();
                 const validFrom = new Date(credential.validFrom);
-                const validUntil = new Date(credential.validUntil);
-                const isValid = now >= validFrom && now <= validUntil;
+                const validUntil = credential.validUntil ? new Date(credential.validUntil) : null;
+                const isValid = now >= validFrom && (!validUntil || now <= validUntil);
 
                 document.getElementById('verificationResult').textContent = `
-                Código: ${credential.code}
-                Titular: ${credential.subject.name}
-                Título: ${credential.subject.degree}
-                Emisor: ${credential.issuer}
+                ID: ${credential.id}
+                Emisor: ${credential.emisor}
                 Estado: ${isValid ? 'Válida ✅' : 'Inválida ❌'}
+                Contexto: ${credential.asuntoCredencial.exalumnoDe.nombre}
+                Titular DID: ${credential.asuntoCredencial.id}
                 `;
             } else {
                 document.getElementById('verificationResult').textContent = "Credencial no encontrada ❌";
@@ -69,10 +86,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (credentialList) {
         credentialList.innerHTML = mockCredentials.map(cred => `
             <div class="credential">
-                <p><strong>Código:</strong> ${cred.code}</p>
-                <p><strong>Titular:</strong> ${cred.subject.name}</p>
-                <p><strong>Título:</strong> ${cred.subject.degree}</p>
-                <p><strong>Emisor:</strong> ${cred.issuer}</p>
+                <p><strong>ID:</strong> ${cred.id}</p>
+                <p><strong>Emisor:</strong> ${cred.emisor}</p>
+                <p><strong>Contexto:</strong> ${cred.asuntoCredencial.exalumnoDe.nombre}</p>
             </div>
         `).join('');
     }
