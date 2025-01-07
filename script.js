@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Lista de credenciales simuladas
     const mockCredentials = [
         {
             code: "ABC123",
@@ -10,48 +9,71 @@ document.addEventListener('DOMContentLoaded', () => {
                 name: "Juan Pérez",
                 degree: "Licenciatura en Ciencias y Artes"
             }
-        },
-        {
-            code: "XYZ789",
-            issuer: "Instituto Tecnológico",
-            validFrom: "2024-06-15T00:00:00Z",
-            validUntil: "2025-06-15T00:00:00Z",
-            subject: {
-                name: "María García",
-                degree: "Maestría en Ingeniería"
-            }
         }
     ];
 
-    // Verificar credencial con código
+    // Crear Credencial
+    const createForm = document.getElementById('createCredentialForm');
+    if (createForm) {
+        createForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const degree = document.getElementById('degree').value;
+            const issuer = document.getElementById('issuer').value;
+            const validFrom = document.getElementById('validFrom').value;
+            const validUntil = document.getElementById('validUntil').value;
+
+            const newCredential = {
+                code: `CODE${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+                issuer,
+                validFrom,
+                validUntil,
+                subject: { name, degree }
+            };
+
+            mockCredentials.push(newCredential);
+
+            document.getElementById('credentialOutput').textContent = JSON.stringify(newCredential, null, 2);
+        });
+    }
+
+    // Verificar Credencial
     const verifyForm = document.getElementById('verifyCredentialForm');
     if (verifyForm) {
         verifyForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const code = document.getElementById('credentialCode').value.trim();
-
-            // Buscar credencial por código
             const credential = mockCredentials.find(cred => cred.code === code);
 
-            // Verificar validez
             if (credential) {
                 const now = new Date();
                 const validFrom = new Date(credential.validFrom);
                 const validUntil = new Date(credential.validUntil);
                 const isValid = now >= validFrom && now <= validUntil;
 
-                const result = `
+                document.getElementById('verificationResult').textContent = `
                 Código: ${credential.code}
                 Titular: ${credential.subject.name}
                 Título: ${credential.subject.degree}
                 Emisor: ${credential.issuer}
                 Estado: ${isValid ? 'Válida ✅' : 'Inválida ❌'}
                 `;
-
-                document.getElementById('verificationResult').textContent = result;
             } else {
                 document.getElementById('verificationResult').textContent = "Credencial no encontrada ❌";
             }
         });
+    }
+
+    // Visualizar Credenciales
+    const credentialList = document.getElementById('credentialList');
+    if (credentialList) {
+        credentialList.innerHTML = mockCredentials.map(cred => `
+            <div class="credential">
+                <p><strong>Código:</strong> ${cred.code}</p>
+                <p><strong>Titular:</strong> ${cred.subject.name}</p>
+                <p><strong>Título:</strong> ${cred.subject.degree}</p>
+                <p><strong>Emisor:</strong> ${cred.issuer}</p>
+            </div>
+        `).join('');
     }
 });
